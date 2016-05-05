@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript" src='https://www.google.com/jsapi?autoload={"modules":[{ "name":"visualization","version":"1", 
+         "packages":["map"]
+         }] 
+      }'></script> 
+  </head>
+  <script>
+
+    google.setOnLoadCallback(loadChart);
+
+    var wrapper;
+  
+  var baseURL = window.location.origin + window.location.pathname.substring(0,window.location.pathname.indexOf("GeoMap.html"))
+  
+    $.urlParam = function(name){
+        var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+        if (results==null){
+            return null;
+        }else{
+            return results[1] || 0;
+        }
+    }
+      var token = $.urlParam('auth_token');
+        var device = $.urlParam('device');
+
+  var options = {
+    type: "POST",
+    url: baseURL + "iotx/geoDataLoad",
+    success: function() {},
+    failure: function() {},
+    dataType: "json",
+        data: { "device": device}
+  };
+  
+  if(token) {
+    options["headers"] = { "Authorization":  "bearer " + token };
+  }
+
+    //setInterval(function(){ loadChart() }, 10000);
+    
+    function loadChart() {
+        var chart_content = {
+          "containerId":"scriptrChart",
+          "options":{
+            showLine: true,
+            showTip: true,
+            lineWeight:5,
+            lineColor:'red',
+            enableScrollWheel:true,
+          useMapTypeControl: true,
+            height: 800,
+            keepAspectRatio: true       
+        },
+        "view":{
+          "columns":[0,1,2,{"sourceColumn":3,"properties":{"role":"tooltip"},"label":"Time"}]
+        },
+        "isDefaultVisualization":true,
+        "chartType":"Map"
+        };
+        wrapper = new google.visualization.ChartWrapper(chart_content);
+        $.ajax(options).done(function(response) {
+                setDataSource(response.response.result);
+             })
+             .fail(function(response ) {
+                var out = "";
+            if(response.status == 0 && response.statusText == "error" && response.readyState == 0 && response.responseText == ""){
+                out += "An error has occurred. This is most likely a cross-domain issue. In case you modified the response object in your script, try adding response.addHeaders(configuration.crossDomainHeaders) to your code.";
+            }else{
+                var output = response;
+                if(response.responseJSON){
+                    out += "Your chart data source script returned a "+ response.responseJSON.response.metadata.errorCode + " error."
+                }
+            }
+            $("#scriptrChart").html(out);
+            })
+            .always(function(data) {
+            });
+    }
+    
+    function setDataSource(data) {
+        wrapper.setDataTable(data);
+        if(wrapper.getChartType() != null) {
+            wrapper.draw();
+        }
+    }
+
+    function drawChart() {
+        wrapper.draw();
+    }
+
+    </script>
+  <body>
+      <div id="scriptrChart"></div>
+  </body>
+</html>
