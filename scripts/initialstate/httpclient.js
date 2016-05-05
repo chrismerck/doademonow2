@@ -109,5 +109,4 @@ HttpClient.prototype._paramsToString = function(params) {
   }
   
   return newParams;
-};ams;
 };
